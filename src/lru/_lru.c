@@ -481,19 +481,8 @@ LRU_popitem(LRU *self, PyObject *args, PyObject *kwds)
     int pop_least_recent = 1;
     PyObject *result;
 
-#if PY_MAJOR_VERSION >= 3
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|p", kwlist, &pop_least_recent))
         return NULL;
-#else
-    {
-        PyObject *arg_ob = Py_True;
-        if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, &arg_ob))
-            return NULL;
-        pop_least_recent = PyObject_IsTrue(arg_ob);
-        if (pop_least_recent == -1)
-            return NULL;
-    }
-#endif
     if (pop_least_recent)
         result = LRU_peek_last_item(self);
     else
@@ -752,7 +741,6 @@ static PyTypeObject LRUType = {
     0,                       /* tp_new */
 };
 
-#if PY_MAJOR_VERSION >= 3
   static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     "_lru",            /* m_name */
@@ -764,7 +752,6 @@ static PyTypeObject LRUType = {
     NULL,             /* m_clear */
     NULL,             /* m_free */
   };
-#endif
 
 static PyObject *
 moduleinit(void)
@@ -779,11 +766,7 @@ moduleinit(void)
     if (PyType_Ready(&LRUType) < 0)
         return NULL;
 
-    #if PY_MAJOR_VERSION >= 3
-        m = PyModule_Create(&moduledef);
-    #else
-        m = Py_InitModule3("_lru", NULL, lru_doc);
-    #endif
+    m = PyModule_Create(&moduledef);
 
     if (m == NULL)
         return NULL;
@@ -795,16 +778,8 @@ moduleinit(void)
     return m;
 }
 
-#if PY_MAJOR_VERSION < 3
-    PyMODINIT_FUNC
-    init_lru(void)
-    {
-        moduleinit();
-    }
-#else
-    PyMODINIT_FUNC
-    PyInit__lru(void)
-    {
-        return moduleinit();
-    }
-#endif
+PyMODINIT_FUNC
+PyInit__lru(void)
+{
+    return moduleinit();
+}
