@@ -323,6 +323,11 @@ lru_ass_sub(LRU *self, PyObject *key, PyObject *value)
                 }
 
                 lru_add_node_at_head(self, node);
+            } else {
+                // If PUT_NODE fails, we need to clean up
+                Py_DECREF(key);
+                Py_DECREF(value);
+                PyObject_Del(node);
             }
         }
     } else {
@@ -330,10 +335,10 @@ lru_ass_sub(LRU *self, PyObject *key, PyObject *value)
         if (res == 0 && node) {
             assert(PyObject_TypeCheck(node, &NodeType));
             lru_remove_node(self, node);
+            Py_DECREF(node);
         }
     }
 
-    Py_XDECREF(node);
     return res;
 }
 
