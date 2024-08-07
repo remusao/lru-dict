@@ -199,7 +199,6 @@ lru_delete_last(LRU *self)
         return;
 
     if (self->callback) {
-
         arglist = Py_BuildValue("OO", n->key, n->value);
         result = PyObject_CallObject(self->callback, arglist);
         Py_XDECREF(result);
@@ -307,6 +306,9 @@ lru_ass_sub(LRU *self, PyObject *key, PyObject *value)
             res = 0;
         } else {
             node = PyObject_NEW(Node, &NodeType);
+            if (node == NULL) {
+                return -1;  // Add this check for allocation failure
+            }
             node->key = key;
             node->value = value;
             node->next = node->prev = NULL;
@@ -325,8 +327,8 @@ lru_ass_sub(LRU *self, PyObject *key, PyObject *value)
         }
     } else {
         res = PUT_NODE(self->dict, key, NULL);
-        if (res == 0) {
-            assert(node && PyObject_TypeCheck(node, &NodeType));
+        if (res == 0 && node) {
+            assert(PyObject_TypeCheck(node, &NodeType));
             lru_remove_node(self, node);
         }
     }
@@ -572,7 +574,6 @@ LRU_clear(LRU *self)
     Py_RETURN_NONE;
 }
 
-
 static PyObject *
 LRU_get_size(LRU *self)
 {
@@ -682,7 +683,7 @@ LRU_dealloc(LRU *self)
         Py_DECREF(self->dict);
         Py_XDECREF(self->callback);
     }
-    PyObject_Del((PyObject*)self);
+    Py_TYPE(self)->tp_free((PyObject*)self);  // Use this instead of PyObject_Del
 }
 
 PyDoc_STRVAR(lru_doc,
